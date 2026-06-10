@@ -1,0 +1,71 @@
+# MEMROT v2 — single config. Zero magic numbers in code.
+schema_version: 2
+
+model:
+  name: google/gemma-2-2b          # base model; if k=0 accuracy gate fails, switch to google/gemma-2-2b-it (Gemma Scope pt SAEs transfer reasonably; see README)
+  dtype: bfloat16
+  attn_implementation: eager       # REQUIRED: hooks must see attention weights
+  max_ctx: 8192
+  haystack_token_budget: 7500      # leaves room for generation within 8192
+
+generation:
+  do_sample: false
+  max_new_tokens: 64
+
+sae:
+  repo: google/gemma-scope-2b-pt-res   # JumpReLU SAEs, loaded directly from params.npz (no sae_lens; see README "deviations")
+  width: 16k
+  target_l0: 100                   # per layer, pick available average_l0_* nearest this (canonical convention); chosen l0s logged in manifest
+  layers: auto                     # filled by layer_scan (top-5); set an explicit list to override
+  topk_store: 64                   # top-64 (feat_id, act) per layer per (qid, k)
+
+benchmark:
+  source: longmemeval_s
+  hf_repo: xiaowu0162/longmemeval
+  hf_filename: longmemeval_s       # note: no .json extension in the HF repo
+  local_json: null                 # set to an absolute path to skip the HF download
+  n_questions: 300                 # questions WITH exactly one identifiable gold session
+  k_levels: [0, 1, 2, 4, 8, 14]
+  gold_max_tokens: 2000            # gold session must fit in this many tokens
+
+haystack:
+  distractor_token_cap: auto       # auto = (budget - gold_max_tokens - overhead_tokens) / max(k); fixed across k so context grows ~linearly with k
+  overhead_tokens: 250             # instruction + question + headers allowance
+  hard_distractors: false          # true -> restrict pool to the question's own LongMemEval haystack (topic-matched only)
+
+retrieval_heads:
+  copy_score_threshold: 0.1
+  probe_examples: 50
+  probe_haystack_tokens: 1500      # probes stay short so output_attentions is memory-safe
+  needle_words: 5
+  top_n_heads: 20                  # cap on heads used for ablation/intervention
+
+layer_scan:
+  n_questions: 30
+  k_high: 8
+  top_n_layers: 5
+  top_features_per_layer: 10       # features used in the separability score
+
+grading:
+  f1_threshold: 0.5                # correct if gold substring of pred OR token-F1 >= this
+  distractor_overlap: 0.5
+
+analysis:
+  collapse_frac: 0.5               # k_collapse = first k where signal < frac * its k=0 value
+  flip_high_k: 8                   # intervention targets questions correct at k=0, wrong at this k
+  ablation_n: 100                  # k=0-correct questions used for H3a
+  ablation_calibration_n: 32       # prompts used to estimate per-head mean output
+  zero_ablation: false             # --zero flag / this switch: zero- instead of mean-ablation
+  intervention_mode: feature       # feature = SAE re-injection (primary) | head = retrieval-head output amplification
+  intervention_alpha: 2.0          # head-mode amplification factor
+  recall_feature_top_n: 10         # per layer, features most correlated with correctness
+  n_boot: 1000                     # bootstrap resamples for recovery-fraction CI
+  k0_accuracy_gate: 0.6
+
+run:
+  smoke_test_n: 6                  # 6 questions x 6 k-levels = 36 passes
+  seed: 0
+  max_sec_per_pass: 20             # pace guardrail; sweep logs a warning if exceeded (fallback: cut n_questions to 200, drop k=2)
+
+paths:
+  scratch_root: $SCRATCH/memrot    # resolved in src/paths.py; documented here only

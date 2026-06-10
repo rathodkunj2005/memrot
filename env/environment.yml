@@ -1,0 +1,23 @@
+name: memrot
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - torch==2.4.1                 # bundles cu121 runtime; no cluster CUDA module needed
+      - transformers==4.46.2         # pinned: instrument.py hooks rely on Gemma2Attention's (out, weights, kv) tuple
+      - huggingface_hub==0.26.2
+      - datasets==3.1.0
+      - sentencepiece==0.2.0
+      - numpy==1.26.4
+      - pandas==2.2.3
+      - pyarrow==17.0.0              # pinned for byte-identical parquet across re-runs
+      - h5py==3.12.1
+      - scipy==1.14.1
+      - statsmodels==0.14.4          # MixedLM (H1) + PHReg Cox survival (H2)
+      - pyyaml==6.0.2
+      - matplotlib==3.9.2
+      # sae_lens/transformer_lens intentionally omitted: Gemma Scope SAEs are
+      # loaded directly from params.npz (src/sae_loader.py) to avoid the
+      # dependency stack. See README "Deviations from plan".
