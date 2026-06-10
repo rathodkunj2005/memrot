@@ -17,9 +17,20 @@ if [ ! -x "$MF/bin/conda" ]; then
 fi
 source "$MF/etc/profile.d/conda.sh"
 
-if ! conda env list | awk '{print $1}' | grep -qx memrot; then
-    echo "[setup_env] creating conda env 'memrot'"
+# A dir in envs_dirs is not proof of a working env: the scratch purger deletes
+# conda-installed files whose package-build mtimes look old (it ate the python
+# stdlib overnight on 2026-06-10 while pip-installed site-packages survived).
+# So probe the interpreter itself, and rebuild from scratch if it's broken.
+env_python="$SCRATCH/conda/envs/memrot/bin/python"
+if ! "$env_python" -c "import encodings, os" >/dev/null 2>&1; then
+    echo "[setup_env] env 'memrot' missing or purge-damaged; rebuilding"
+    conda env remove -n memrot -y >/dev/null 2>&1 || true
+    rm -rf "$SCRATCH/conda/envs/memrot" "$SCRATCH/conda/pkgs"   # cache shares the damage via hardlinks
     conda env create -f "$SCRIPT_DIR/environment.yml"
+    # refresh mtimes so the purger's age check starts from today, not pkg build time
+    echo "[setup_env] touching env + pkgs cache files to reset purge clock"
+    find "$SCRATCH/conda/envs/memrot" "$SCRATCH/conda/pkgs" "$MF" \
+        -type f -print0 2>/dev/null | xargs -0 -r touch -c
 fi
 conda activate memrot
 

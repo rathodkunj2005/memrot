@@ -32,6 +32,8 @@ class Instrumentor:
     def run(self, prompt_ids, gen_ids, gold_span):
         """Returns (attn_mass [n_layers, n_heads] float32 numpy,
                     {layer: resid_vec tensor [d_model]})."""
+        if not gen_ids:
+            die("instrument", "empty gen_ids: no answer-emission rows to reduce over")
         full = list(prompt_ids) + list(gen_ids)
         q_start = len(prompt_ids) - 1            # first answer-emission query row
         gs, ge = gold_span
@@ -48,9 +50,12 @@ class Instrumentor:
                 if w is None or w.ndim != 4:
                     die("instrument", f"attention weights not exposed at layer {layer_idx}; "
                                       "is attn_implementation really 'eager'?")
-                # w: [1, H, Tq, Tk] post-softmax
+                # w: [1, H, Tq, Tk] post-softmax. Emission rows are q_start..T-2:
+                # row p predicts token p+1, and row T-1's prediction is unused,
+                # so including it averages in a non-emission row (and broke the
+                # smoke full-range==1 check, since its self-key lies past ge).
                 attn_mass[layer_idx] = (
-                    w[0, :, q_start:, gs:ge].sum(dim=-1).mean(dim=-1).float().cpu())
+                    w[0, :, q_start:-1, gs:ge].sum(dim=-1).mean(dim=-1).float().cpu())
                 return (output[0], None, *output[2:])   # free the full matrix
             return hook
 
