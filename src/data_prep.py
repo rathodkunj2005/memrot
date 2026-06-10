@@ -1,9 +1,15 @@
 """LongMemEval-S -> per-question records + distractor session pool.
 
-Selection rules (v2 design):
+Selection rules (v2 design, amended after measuring the dataset):
   - drop abstention questions (qid endswith '_abs'; they have no gold answer)
-  - keep questions with EXACTLY ONE gold evidence session (answer_session_ids)
-  - gold session must tokenize to <= benchmark.gold_max_tokens
+  - keep questions with EXACTLY ONE gold evidence session (answer_session_ids);
+    LongMemEval-S has exactly 170 such questions
+  - gold session must fit benchmark.gold_max_tokens; sessions that are longer
+    (the median evidence session is ~2.5k Gemma tokens, so a hard filter would
+    keep only ~50 questions) are TRIMMED to a turn window centered on the
+    has_answer evidence turn(s) — flagged in records as gold_trimmed. Questions
+    whose trimming destroys the answer fail at k=0 and drop out of the paired
+    analysis by design.
   - take the first benchmark.n_questions in sorted-qid order (determinism)
 
 Distractor pool: every NON-gold haystack session of every kept question. In
@@ -29,6 +35,29 @@ def _session_text(turns) -> str:
         content = str(t.get("content", "")).strip()
         lines.append(f"{role}: {content}")
     return "\n".join(lines)
+
+
+def _trim_gold(turns, ntok, cap):
+    """Trim a too-long evidence session to a turn window around the has_answer
+    turn(s): start from the evidence turns, then alternately add the preceding /
+    following neighbor while the rendered session stays under cap."""
+    ev = [i for i, t in enumerate(turns) if t.get("has_answer")]
+    if not ev:
+        return None
+    lo, hi = min(ev), max(ev)
+    if ntok(_session_text(turns[lo:hi + 1])) > cap:
+        # evidence turns alone exceed cap: hard-truncate (k=0 gate catches damage)
+        return turns[lo:hi + 1]
+    while True:
+        grew = False
+        if lo > 0 and ntok(_session_text(turns[lo - 1:hi + 1])) <= cap:
+            lo -= 1
+            grew = True
+        if hi < len(turns) - 1 and ntok(_session_text(turns[lo:hi + 2])) <= cap:
+            hi += 1
+            grew = True
+        if not grew:
+            return turns[lo:hi + 1]
 
 
 def _load_raw(cfg) -> list:
@@ -76,9 +105,23 @@ def prepare(cfg, tokenizer, n_questions=None, force=False):
         gold_idx = hay_ids.index(gold_ids[0])
         sess = item["haystack_sessions"]
 
-        gold_text = _session_text(sess[gold_idx])
+        gold_turns = sess[gold_idx]
+        gold_text = _session_text(gold_turns)
         gold_tok = ntok(gold_text)
-        if gold_tok > gold_max or gold_tok == 0:
+        gold_trimmed = False
+        if gold_tok > gold_max:
+            trimmed = _trim_gold(gold_turns, ntok, gold_max)
+            if trimmed is None:
+                n_long += 1
+                continue
+            gold_text = _session_text(trimmed)
+            # if even the evidence turns alone exceed cap, hard-truncate tokens
+            tids = tokenizer(gold_text, add_special_tokens=False)["input_ids"]
+            if len(tids) > gold_max:
+                gold_text = tokenizer.decode(tids[:gold_max])
+            gold_tok = ntok(gold_text)
+            gold_trimmed = True
+        if gold_tok == 0:
             n_long += 1
             continue
 
@@ -91,6 +134,7 @@ def prepare(cfg, tokenizer, n_questions=None, force=False):
             "gold_session_id": gold_ids[0],
             "gold_text": gold_text,
             "gold_tokens": gold_tok,
+            "gold_trimmed": gold_trimmed,
         })
         for i, (sid, turns) in enumerate(zip(hay_ids, sess)):
             if i == gold_idx:
@@ -120,7 +164,8 @@ def prepare(cfg, tokenizer, n_questions=None, force=False):
     sessions_df.to_parquet(ses_path, index=False)
     io_utils.status(
         "data_prep", True,
-        f"kept {len(records_df)} questions, {len(sessions_df)} pool sessions "
-        f"(skipped: {n_abs} abstention, {n_multi} multi/zero-gold, "
-        f"{n_long} gold>{gold_max}tok, {n_missing} gold-missing)")
+        f"kept {len(records_df)} questions "
+        f"({int(records_df['gold_trimmed'].sum())} gold-trimmed), "
+        f"{len(sessions_df)} pool sessions (skipped: {n_abs} abstention, "
+        f"{n_multi} multi/zero-gold, {n_long} untrimmable, {n_missing} gold-missing)")
     return records_df, sessions_df

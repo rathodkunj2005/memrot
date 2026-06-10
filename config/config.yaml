@@ -24,9 +24,9 @@ benchmark:
   hf_repo: xiaowu0162/longmemeval
   hf_filename: longmemeval_s       # note: no .json extension in the HF repo
   local_json: null                 # set to an absolute path to skip the HF download
-  n_questions: 300                 # questions WITH exactly one identifiable gold session
+  n_questions: 170                 # ALL exactly-one-gold questions in LongMemEval-S (measured 2026-06-09; the plan's 300 does not exist in the data)
   k_levels: [0, 1, 2, 4, 8, 14]
-  gold_max_tokens: 2000            # gold session must fit in this many tokens
+  gold_max_tokens: 2000            # longer gold sessions are trimmed to a turn window around the has_answer evidence turn(s)
 
 haystack:
   distractor_token_cap: auto       # auto = (budget - gold_max_tokens - overhead_tokens) / max(k); fixed across k so context grows ~linearly with k

@@ -73,6 +73,14 @@ Runs 2/3 hard-fail on `schema_version` mismatch.
    (last prompt token through end of generated answer) in a single instrumented
    forward over prompt+answer — strictly more informative than last-prompt-token
    only, same memory contract.
+5. **n_questions = 170, not 300.** Measured on LongMemEval-S (2026-06-09): only
+   170 non-abstention questions have exactly one gold evidence session; the
+   plan's 300 does not exist in the data. Evidence sessions are also long
+   (median ~2.5k Gemma tokens), so instead of the plan's hard ≤2k filter (which
+   would keep ~50 questions) long gold sessions are trimmed to a turn window
+   centered on the `has_answer` evidence turn(s) (`gold_trimmed` flag in
+   records). Sweep is therefore 170×6 = 1,020 passes (~3-4h), inside the
+   original wall-time request.
 
 ## De-risk fallbacks (from the plan; decision thresholds unchanged)
 - **k=0 accuracy < 60%** (smoke or verify): inspect preds in

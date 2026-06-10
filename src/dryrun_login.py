@@ -23,7 +23,8 @@ from haystack import HaystackBuilder
 from io_utils import status
 
 _s = os.environ.get("SCRATCH", "")
-assert _s and not _s.startswith("/scratch/general"), \
+_real = f"/scratch/general/vast/{os.environ.get('USER', '')}"
+assert _s and os.path.realpath(_s) != os.path.realpath(_real), \
     "refusing to run against the real $SCRATCH; use SCRATCH=$(mktemp -d)"
 
 cfg = io_utils.load_config(paths.config_path())
