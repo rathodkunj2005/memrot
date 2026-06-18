@@ -35,17 +35,33 @@ def _sub(parent: Path, name: str) -> Path:
     return p
 
 
+def _model_seg() -> str:
+    """Per-model namespace segment from $MEMROT_MODEL_ID (e.g. '2b'/'9b'/'27b').
+
+    Lets several models' artifacts coexist under $SCRATCH/memrot without
+    clobbering each other (the model-scaling study). Empty -> legacy un-namespaced
+    layout, preserved for backward compatibility.
+    """
+    return os.environ.get("MEMROT_MODEL_ID", "").strip()
+
+
 def artifacts_dir() -> Path:
-    return _sub(scratch_root(), "artifacts")
+    base = _sub(scratch_root(), "artifacts")
+    seg = _model_seg()
+    return _sub(base, seg) if seg else base
 
 
 def smoke_dir() -> Path:
     """Smoke-test artifacts are quarantined so they never pollute the real run."""
-    return _sub(scratch_root(), "smoke_artifacts")
+    base = _sub(scratch_root(), "smoke_artifacts")
+    seg = _model_seg()
+    return _sub(base, seg) if seg else base
 
 
 def analysis_dir() -> Path:
-    return _sub(scratch_root(), "analysis")
+    base = _sub(scratch_root(), "analysis")
+    seg = _model_seg()
+    return _sub(base, seg) if seg else base
 
 
 def figures_dir() -> Path:

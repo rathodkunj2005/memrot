@@ -1,0 +1,8 @@
+# Gemma-2-2B leg of the scaling study. Overrides config.yaml (the shared base,
+# which already targets 2B); only adds the per-model namespace + smoke layer.
+extends: config.yaml
+schema_version: 2
+
+run:
+  model_id: 2b                 # -> artifacts/2b, analysis/2b (via $MEMROT_MODEL_ID)
+  smoke_sae_layers: [12]       # layer 12 has a Gemma Scope 2B SAE

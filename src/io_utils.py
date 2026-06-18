@@ -35,9 +35,30 @@ def die(stage: str, detail: str) -> None:
     sys.exit(1)
 
 
+def _deep_merge(base: dict, over: dict) -> dict:
+    """Recursively overlay `over` onto `base` (override wins; dicts merge)."""
+    out = dict(base)
+    for k, v in over.items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = v
+    return out
+
+
 def load_config(path) -> dict:
+    path = Path(path)
     with open(path) as f:
         cfg = yaml.safe_load(f)
+    # `extends: <file>` lets per-model configs (config_9b.yaml etc.) carry only
+    # their overrides on top of the shared base, so the 140-question design stays
+    # in one place. Resolved relative to the override file's directory.
+    base_name = cfg.pop("extends", None)
+    if base_name:
+        with open(path.parent / base_name) as f:
+            base = yaml.safe_load(f)
+        base.pop("extends", None)
+        cfg = _deep_merge(base, cfg)
     if cfg.get("schema_version") != SCHEMA_VERSION:
         die("config", f"config schema_version {cfg.get('schema_version')} != {SCHEMA_VERSION}")
     return cfg

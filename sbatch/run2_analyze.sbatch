@@ -16,9 +16,10 @@ export MEMROT_ROOT="$SLURM_SUBMIT_DIR"
 export HF_HOME="$SCRATCH/hf_cache"
 export CUBLAS_WORKSPACE_CONFIG=":4096:8"
 export TOKENIZERS_PARALLELISM=false
+export MEMROT_MODEL_ID=2b                      # namespace -> analysis/2b (scaling layout)
 
 bash env/setup_env.sh
 source "$SCRATCH/memrot/miniforge3/etc/profile.d/conda.sh"
 conda activate memrot
 
-python -u src/run_analysis.py --config config/config.yaml
+python -u src/run_analysis.py --config config/config_2b.yaml

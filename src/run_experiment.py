@@ -24,7 +24,10 @@ import sae_loader
 from haystack import HaystackBuilder
 from io_utils import die, status
 
-SMOKE_SAE_LAYERS = [12]   # machinery check only; real layers come from layer_scan
+SMOKE_SAE_LAYERS = [12]   # default; per-model override via cfg.run.smoke_sae_layers
+                          # (machinery check only; real layers come from layer_scan).
+                          # 27B Gemma Scope only ships SAEs for layers {10,22,34}, so
+                          # the hardcoded 12 must be overridden there (use 22).
 
 
 def check_auth(cfg):
@@ -68,10 +71,11 @@ def evaluate_one(cfg, model, tok, builder, instr, saes, rec, k, dist_text_by_uid
 def smoke_test(cfg, model, tok, records_df, sessions_df):
     t0 = time.time()
     sdir = paths.smoke_dir()
+    smoke_layers = cfg["run"].get("smoke_sae_layers", SMOKE_SAE_LAYERS)
     builder = HaystackBuilder(cfg, tok, sessions_df)
-    instr = instrument.Instrumentor(model, SMOKE_SAE_LAYERS)
+    instr = instrument.Instrumentor(model, smoke_layers)
     saes = {}
-    for L in SMOKE_SAE_LAYERS:
+    for L in smoke_layers:
         saes[L], l0 = sae_loader.load_sae(cfg, L)
         assert saes[L].d_sae == 16384, f"unexpected SAE width {saes[L].d_sae}"
 

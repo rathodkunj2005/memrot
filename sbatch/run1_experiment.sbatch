@@ -19,10 +19,12 @@ export MEMROT_ROOT="$SLURM_SUBMIT_DIR"
 export HF_HOME="$SCRATCH/hf_cache"
 export CUBLAS_WORKSPACE_CONFIG=":4096:8"     # required by torch deterministic mode
 export TOKENIZERS_PARALLELISM=false
+export MEMROT_MODEL_ID=2b                      # namespace -> artifacts/2b (scaling layout)
 
 bash env/setup_env.sh                         # idempotent bootstrap
 source "$SCRATCH/memrot/miniforge3/etc/profile.d/conda.sh"
 conda activate memrot
 
-python -u src/run_experiment.py --config config/config.yaml --smoke-test
-python -u src/run_experiment.py --config config/config.yaml --full
+# Legacy 2B entry point; the model-generic path is `bash sbatch/submit_model.sh 2b`.
+python -u src/run_experiment.py --config config/config_2b.yaml --smoke-test
+python -u src/run_experiment.py --config config/config_2b.yaml --full

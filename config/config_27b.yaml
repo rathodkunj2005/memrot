@@ -1,0 +1,17 @@
+# Gemma-2-27B leg of the scaling study. Same 140-question design as the base.
+# NOTE: Gemma Scope 27B ships residual SAEs for ONLY layers {10, 22, 34}, so the
+# SAE-feature results (H1-feature, H3b-intervention) are restricted to those
+# layers; the attention-based results (H1-attn, H2, H3a) are fully comparable.
+# layer_scan picks the top-N of whatever is available, so top_n_layers=5 -> 3 here.
+extends: config.yaml
+schema_version: 2
+
+model:
+  name: google/gemma-2-27b-it
+
+sae:
+  repo: google/gemma-scope-27b-pt-res
+
+run:
+  model_id: 27b                # -> artifacts/27b, analysis/27b (via $MEMROT_MODEL_ID)
+  smoke_sae_layers: [22]       # 12 is absent from 27B SAEs; 22 is a mid-depth one

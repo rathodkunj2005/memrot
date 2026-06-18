@@ -13,12 +13,12 @@ set -euo pipefail
 
 cd "$SLURM_SUBMIT_DIR"
 export MEMROT_ROOT="$SLURM_SUBMIT_DIR"
+export MEMROT_MODEL_ID=2b                      # namespace -> analysis/2b (scaling layout)
 
 bash env/setup_env.sh
 source "$SCRATCH/memrot/miniforge3/etc/profile.d/conda.sh"
 conda activate memrot
 
-python -u src/build_report.py --config config/config.yaml
-command -v pandoc >/dev/null \
-    && pandoc paper/paper.md -o paper/paper.pdf \
-    || echo "pandoc absent; paper.md only"
+# Generates the markdown draft from report_template.md. The canonical paper is
+# the hand-built paper/paper.tex -> paper/paper.pdf (pdflatex x2), not this draft.
+python -u src/build_report.py --config config/config_2b.yaml

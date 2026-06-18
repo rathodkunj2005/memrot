@@ -1,14 +1,23 @@
 # MEMROT v2 — Mechanistic Anatomy of Memory-Retrieval Failure as Context Fills
 
-Gemma-2-2B (8k window) + Gemma Scope SAEs + LongMemEval-S material, on CHPC/SLURM.
+Gemma-2-2B-it (8k window) + Gemma Scope SAEs + LongMemEval-S material, on CHPC/SLURM.
 Implements the v2 agent execution plan: controlled haystacks at fill levels
 k ∈ {0,1,2,4,8,14}, paired within-question design, gold-position randomization,
 in-hook attention reduction, empirical SAE layer scan, mean-ablation + intervention.
 
-## One-time human prerequisite (before Run 1)
-`google/gemma-2-2b` is a **gated** HF model and no token is currently installed:
+> **Status (2026-06-17):** the 2B run is complete and the paper
+> (`paper/paper.tex` → `paper/paper.pdf`) is written. The paper is framed as a
+> **single-model, single-seed case study**; its Limitations section catalogs known
+> open confounds (in-sample SAE feature selection, unnormalized attention,
+> sliding-window visibility, H2 shared-trend, heuristic grader) that the next round
+> addresses **before** the planned 9B/27B scaling. Do not treat the current numbers
+> as a finished mechanistic result.
 
-1. Accept the license at https://huggingface.co/google/gemma-2-2b (instant).
+## One-time human prerequisite (before Run 1)
+The instruct model `google/gemma-2-2b-it` (and `-9b-it`/`-27b-it` for the scaling
+legs) is a **gated** HF model:
+
+1. Accept the license at https://huggingface.co/google/gemma-2-2b-it (instant).
 2. On a login node: `pip install -U "huggingface_hub[cli]" --user && HF_HOME=$SCRATCH/hf_cache huggingface-cli login`
    (or simply write the token to `$SCRATCH/hf_cache/token`).
 
@@ -18,30 +27,60 @@ LongMemEval are ungated.
 ## The three runs
 ```bash
 cd ~/memrot
-sbatch sbatch/run1_experiment.sbatch   # heavy GPU (~6h): smoke -> prep -> layer scan -> head ID -> 1800-pass sweep -> verify
+sbatch sbatch/run1_experiment.sbatch   # heavy GPU (~40min on A100): smoke -> prep -> layer scan -> head ID -> 840-pass sweep -> verify
 # read $SCRATCH/memrot/artifacts/run1_verify.json, then:
-sbatch sbatch/run2_analyze.sbatch      # light GPU (~2h): H1/H2 stats, H3 ablation+intervention, figures
+sbatch sbatch/run2_analyze.sbatch      # light GPU (~10min): H1/H2 stats, H3 ablation+intervention, figures
 # read $SCRATCH/memrot/analysis/results_summary.json, then:
-sbatch sbatch/run3_report.sbatch       # CPU (~minutes): paper/paper.md (+pdf if pandoc)
+sbatch sbatch/run3_report.sbatch       # CPU (~minutes): markdown report; the canonical paper is hand-built paper/paper.tex -> paper.pdf via pdflatex (x2)
 ```
+The sweep is **140 questions × 6 k-levels = 840 passes** (the `single-session-preference`
+question type is excluded — its gold answers are prose rubrics the heuristic grader
+cannot score — leaving 140 of the 170 exactly-one-gold LongMemEval-S questions).
 Each sbatch script bootstraps its own conda env idempotently
 (`env/setup_env.sh` → Miniforge at `$SCRATCH/memrot/miniforge3`; the old
 `~/miniconda3` was scratch-purged and is unusable). Every stage is resumable;
 re-submitting a failed job continues where it stopped. `STATUS: <stage> <PASS|FAIL>`
 lines in `logs/runN_*.out` are machine-parseable.
 
-## Artifact contract (schema_version 2)
+## Model-scaling study (2B → 9B → 27B)
+Artifacts are **namespaced per model** by `$MEMROT_MODEL_ID` (`src/paths.py`), so the
+three models coexist under `$SCRATCH/memrot/artifacts/<id>/` and never clobber each
+other. Per-model configs (`config/config_{2b,9b,27b}.yaml`) carry only the model,
+its Gemma Scope SAE repo, and the namespace; everything else inherits the shared
+base via `extends:`.
+
+```bash
+# one-time: accept the HF license for each instruct model you will run
+#   https://huggingface.co/google/gemma-2-9b-it     https://huggingface.co/google/gemma-2-27b-it
+
+bash sbatch/submit_model.sh 9b     # chains experiment -> analyze -> report (afterok), A100 40GB
+bash sbatch/submit_model.sh 27b    # 80GB A100 on the preemptible guest partition (--requeue; resumable)
+sbatch  sbatch/run_compare.sbatch  # CPU: cross-model scaling_summary.json + fig5..fig8
 ```
-$SCRATCH/memrot/artifacts/
+**27B caveat:** Gemma Scope ships 27B residual SAEs for only **3 layers (10, 22, 34)**,
+so 27B's SAE-feature results (H1-feature, H3b) are restricted to those layers; its
+attention-based results (H1-attn, H2, H3a) are fully comparable. The headline
+scaling quantity is attention-mass `β_k`, which is available for every model.
+
+> The current paper is **2B only** and framed as a case study; the 9B/27B legs and
+> the scaling rewrite are pending (and gated on the methodology fixes in the paper's
+> Limitations — scaling a confounded method is not worth the compute).
+
+## Artifact contract (schema_version 2; per-model namespace)
+```
+$SCRATCH/memrot/artifacts/<id>/        # <id> = 2b | 9b | 27b
   longmemeval_records.parquet   longmemeval_sessions.parquet
   layer_scan.json               retrieval_heads.json
   attn_mass.parquet             # (qid,k,layer,head,attn_mass_gold,gold_pos_frac,ctx_tokens)
   sae_acts.h5                   # /q/<qid>/k<k>/layer<L> -> feat_ids[64], acts[64]
   answers.parquet               # (qid,k,pred,gold,f1,correct,error_type,gold_pos_frac,ctx_tokens)
-  run1_manifest.json            run1_verify.json
-$SCRATCH/memrot/analysis/       # Run 2 outputs incl. results_summary.json
-$SCRATCH/memrot/artifacts/figures/   # fig1..fig4 pdf
-paper/paper.md                  # Run 3 output (in repo)
+  run1_manifest.json            run1_verify.json   figures/   # fig1..fig4 pdf
+$SCRATCH/memrot/analysis/<id>/         # Run 2 outputs incl. results_summary.json
+$SCRATCH/memrot/analysis/compare/      # scaling_summary.json (cross-model)
+$SCRATCH/memrot/artifacts/compare/figures/   # fig5..fig8 pdf (scaling)
+$SCRATCH/memrot/data/                  # shared raw LongMemEval download (not namespaced)
+results/<id>/                          # small summary JSONs tracked in-repo (auditable)
+paper/paper.tex -> paper/paper.pdf     # canonical paper (pdflatex x2); paper.md is the Run-3 draft
 ```
 Runs 2/3 hard-fail on `schema_version` mismatch.
 
@@ -73,14 +112,18 @@ Runs 2/3 hard-fail on `schema_version` mismatch.
    (last prompt token through end of generated answer) in a single instrumented
    forward over prompt+answer — strictly more informative than last-prompt-token
    only, same memory contract.
-5. **n_questions = 170, not 300.** Measured on LongMemEval-S (2026-06-09): only
-   170 non-abstention questions have exactly one gold evidence session; the
-   plan's 300 does not exist in the data. Evidence sessions are also long
-   (median ~2.5k Gemma tokens), so instead of the plan's hard ≤2k filter (which
-   would keep ~50 questions) long gold sessions are trimmed to a turn window
-   centered on the `has_answer` evidence turn(s) (`gold_trimmed` flag in
-   records). Sweep is therefore 170×6 = 1,020 passes (~3-4h), inside the
-   original wall-time request.
+5. **n_questions = 140 (not 300, not 170).** Measured on LongMemEval-S
+   (2026-06-09): only 170 non-abstention questions have exactly one gold evidence
+   session; the plan's 300 does not exist in the data. Of those 170 we then
+   **exclude the 30 `single-session-preference` questions** (their gold answers are
+   prose preference-rubrics the heuristic substring/F1 grader cannot score),
+   leaving **140** (64 single-session-user + 56 single-session-assistant + 20
+   temporal). Evidence sessions are also long (median ~2.5k Gemma tokens), so
+   instead of the plan's hard ≤2k filter (which would keep ~50 questions) long
+   gold sessions are **trimmed** to a turn window centered on the `has_answer`
+   evidence turn(s) (`gold_trimmed` flag in records — so this is a controlled
+   LongMemEval-S *variant*, see paper Limitations). Sweep is therefore
+   **140×6 = 840 passes** (~40 min on A100 for 2B).
 
 ## De-risk fallbacks (from the plan; decision thresholds unchanged)
 - **k=0 accuracy < 60%** (smoke or verify): inspect preds in

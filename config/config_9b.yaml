@@ -1,0 +1,14 @@
+# Gemma-2-9B leg of the scaling study. Same 140-question design as the base;
+# only the model, its Gemma Scope SAE repo, and the per-model namespace change.
+extends: config.yaml
+schema_version: 2
+
+model:
+  name: google/gemma-2-9b-it
+
+sae:
+  repo: google/gemma-scope-9b-pt-res   # full-layer coverage like 2B
+
+run:
+  model_id: 9b                 # -> artifacts/9b, analysis/9b (via $MEMROT_MODEL_ID)
+  smoke_sae_layers: [12]       # layer 12 has a Gemma Scope 9B SAE
