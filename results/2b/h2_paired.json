@@ -1,0 +1,27 @@
+{
+  "collapse_frac": 0.5,
+  "results": [
+    {
+      "cox_coef_signal_auc": -7.540454435082821,
+      "cox_hr_signal_auc": 0.0005311561909374617,
+      "cox_p_signal_auc": 3.563408878762103e-09,
+      "n_both_observed": 48,
+      "n_flipped": 64,
+      "n_k0_correct": 100,
+      "signal": "retrieval_head_mass",
+      "spearman_p": 3.5828152154617865e-09,
+      "spearman_rho": 0.7312388172430309
+    },
+    {
+      "cox_coef_signal_auc": -3.452693987453831,
+      "cox_hr_signal_auc": 0.031660229126637525,
+      "cox_p_signal_auc": 0.01589559796150019,
+      "n_both_observed": 24,
+      "n_flipped": 64,
+      "n_k0_correct": 100,
+      "signal": "recall_feature_act",
+      "spearman_p": 1.4754650373865031e-05,
+      "spearman_rho": 0.7626178484878297
+    }
+  ]
+}

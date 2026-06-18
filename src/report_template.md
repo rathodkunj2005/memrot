@@ -1,9 +1,14 @@
-# Mechanistic Anatomy of Memory-Retrieval Failure as Context Fills
+<!-- NOTE: this is the auto-generated Run-3 markdown draft. The canonical paper is
+the hand-built paper/paper.tex -> paper/paper.pdf, which carries the corrected
+(de-overclaimed) framing and an expanded Limitations section. Keep wording here in
+sync with that file. -->
+
+# Controlled Evidence for Retrieval-Signal Degradation as Context Fills
 
 ## Abstract
 Long-context models lose access to stored facts well before their context window
 is exhausted ("context rot"), but the mechanism is unobserved in correlational
-reports. Using Gemma-2-2B within its native 8k window, we build controlled
+reports. Using Gemma-2-2B-it within its native 8k window, we build controlled
 haystacks from LongMemEval-S material: the same question is evaluated at every
 fill level k ∈ {{k_levels}} distractor sessions, with the gold session's position
 randomized and logged. On {{n_questions}} questions (accuracy by k:
@@ -14,11 +19,13 @@ p = {{feature_beta_p}}), controlling for gold position. Within questions, the
 fill level at which the internal signal collapses predicts the level at which
 the answer flips (Spearman ρ = {{rho_flip_collapse}}, p = {{rho_p}},
 n = {{n_paired}}; Cox HR per unit signal-AUC = {{cox_hr}}, p = {{cox_p}}).
-Causally, {{ablation_mode}}-ablating the {{n_retrieval_heads}} identified
-retrieval heads at k=0 drops accuracy by {{ablation_drop}} (random-head control:
-{{ablation_drop_random}}), and {{intervention_mode}}-mode intervention at high k
-recovers {{recovery_frac}} (95% CI [{{recovery_ci_lo}}, {{recovery_ci_hi}}]) of
-{{n_flipped}} flipped answers.
+Intervention experiments give suggestive causal evidence:
+{{ablation_mode}}-ablating the {{n_retrieval_heads}} candidate
+retrieval heads at k=0 drops accuracy by {{ablation_drop}} (single random-head
+control: {{ablation_drop_random}}), and {{intervention_mode}}-mode intervention at
+high k recovers {{recovery_frac}} (95% CI [{{recovery_ci_lo}}, {{recovery_ci_hi}}])
+of {{n_flipped}} flipped answers. Features are selected in-sample, so these are
+read as suggestive rather than dispositive (see Limitations).
 
 ## 1. Introduction
 Context rot — degradation of retrieval as the context fills, well inside the
@@ -51,14 +58,14 @@ question as random intercept and gold position as covariate; gold-position
 β = {{gold_pos_beta}}). Recall-feature activation shows the same decline
 (β_k = {{feature_beta}}, p = {{feature_beta_p}}). Fig. 1, Fig. 4.
 
-**H2 (paired, headline).** Among the {{n_k0_correct}} questions correct at k=0,
+**H2 (paired).** Among the {{n_k0_correct}} questions correct at k=0,
 per-question signal-collapse level predicts answer-flip level:
 ρ = {{rho_flip_collapse}} (p = {{rho_p}}, n = {{n_paired}} with both events
 observed); the survival model over all questions (censoring included) gives a
 hazard ratio of {{cox_hr}} (p = {{cox_p}}) per unit normalized signal-AUC.
 Feature-signal variant: ρ = {{rho_flip_collapse_feat}}. Fig. 2.
 
-**H3 (causal).** {{ablation_mode}}-ablation of retrieval heads at k=0 on
+**H3 (intervention).** {{ablation_mode}}-ablation of retrieval heads at k=0 on
 {{ablation_n}} previously-correct questions drops accuracy by {{ablation_drop}}
 versus {{ablation_drop_random}} for matched random heads. Intervening at high k
 ({{intervention_mode}} mode) recovers {{recovery_frac}}

@@ -1,0 +1,45 @@
+{
+  "acc_by_k": {
+    "0": 0.7142857142857143,
+    "1": 0.6714285714285714,
+    "2": 0.5785714285714286,
+    "4": 0.5857142857142857,
+    "8": 0.5214285714285715,
+    "14": 0.34285714285714286
+  },
+  "checks": {
+    "answers_nan": {
+      "detail": "",
+      "ok": true
+    },
+    "answers_rows": {
+      "detail": "840 vs 840",
+      "ok": true
+    },
+    "attn_nan": {
+      "detail": "",
+      "ok": true
+    },
+    "attn_rows": {
+      "detail": "174720 vs 174720",
+      "ok": true
+    },
+    "h5_groups": {
+      "detail": "0 (qid,k) missing in sae_acts.h5",
+      "ok": true
+    },
+    "k0_accuracy": {
+      "detail": "0.714 (gate 0.6); if FAIL: gold-session filter or grading is broken, or base model needs the -it variant \u2014 see README fallbacks",
+      "ok": true
+    }
+  },
+  "k0_accuracy": 0.7142857142857143,
+  "ok": true,
+  "sae_layers": [
+    20,
+    21,
+    22,
+    23,
+    24
+  ]
+}

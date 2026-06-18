@@ -1,0 +1,262 @@
+{
+  "20": [
+    {
+      "corr": 0.5495,
+      "feat_id": 12927,
+      "target_act": 17.1236
+    },
+    {
+      "corr": 0.433,
+      "feat_id": 12441,
+      "target_act": 15.7805
+    },
+    {
+      "corr": 0.4255,
+      "feat_id": 6712,
+      "target_act": 8.3537
+    },
+    {
+      "corr": 0.3984,
+      "feat_id": 11164,
+      "target_act": 9.6725
+    },
+    {
+      "corr": 0.3928,
+      "feat_id": 8793,
+      "target_act": 6.2686
+    },
+    {
+      "corr": 0.3842,
+      "feat_id": 7292,
+      "target_act": 34.9069
+    },
+    {
+      "corr": 0.3688,
+      "feat_id": 7368,
+      "target_act": 8.9944
+    },
+    {
+      "corr": 0.3631,
+      "feat_id": 3007,
+      "target_act": 8.5567
+    },
+    {
+      "corr": 0.3143,
+      "feat_id": 6260,
+      "target_act": 4.1878
+    },
+    {
+      "corr": 0.3096,
+      "feat_id": 6631,
+      "target_act": 11.9494
+    }
+  ],
+  "21": [
+    {
+      "corr": 0.5228,
+      "feat_id": 2982,
+      "target_act": 26.531
+    },
+    {
+      "corr": 0.4542,
+      "feat_id": 14580,
+      "target_act": 11.4782
+    },
+    {
+      "corr": 0.428,
+      "feat_id": 3201,
+      "target_act": 9.659
+    },
+    {
+      "corr": 0.378,
+      "feat_id": 16311,
+      "target_act": 18.0734
+    },
+    {
+      "corr": 0.3643,
+      "feat_id": 4138,
+      "target_act": 34.5897
+    },
+    {
+      "corr": 0.3606,
+      "feat_id": 14337,
+      "target_act": 26.5817
+    },
+    {
+      "corr": 0.329,
+      "feat_id": 3973,
+      "target_act": 38.2521
+    },
+    {
+      "corr": 0.2788,
+      "feat_id": 12441,
+      "target_act": 3.9578
+    },
+    {
+      "corr": 0.2783,
+      "feat_id": 5400,
+      "target_act": 6.7231
+    },
+    {
+      "corr": 0.2777,
+      "feat_id": 5680,
+      "target_act": 4.809
+    }
+  ],
+  "22": [
+    {
+      "corr": 0.4224,
+      "feat_id": 6302,
+      "target_act": 16.8551
+    },
+    {
+      "corr": 0.4188,
+      "feat_id": 13220,
+      "target_act": 43.9506
+    },
+    {
+      "corr": 0.4086,
+      "feat_id": 10566,
+      "target_act": 15.4491
+    },
+    {
+      "corr": 0.3996,
+      "feat_id": 14613,
+      "target_act": 16.8316
+    },
+    {
+      "corr": 0.3273,
+      "feat_id": 15056,
+      "target_act": 30.357
+    },
+    {
+      "corr": 0.3214,
+      "feat_id": 9723,
+      "target_act": 23.0742
+    },
+    {
+      "corr": 0.301,
+      "feat_id": 15649,
+      "target_act": 16.9949
+    },
+    {
+      "corr": 0.299,
+      "feat_id": 6852,
+      "target_act": 5.8379
+    },
+    {
+      "corr": 0.2956,
+      "feat_id": 7460,
+      "target_act": 19.0566
+    },
+    {
+      "corr": 0.2535,
+      "feat_id": 8866,
+      "target_act": 3.9969
+    }
+  ],
+  "23": [
+    {
+      "corr": 0.4458,
+      "feat_id": 13504,
+      "target_act": 14.4245
+    },
+    {
+      "corr": 0.4205,
+      "feat_id": 8751,
+      "target_act": 42.2766
+    },
+    {
+      "corr": 0.3532,
+      "feat_id": 9991,
+      "target_act": 9.6793
+    },
+    {
+      "corr": 0.3365,
+      "feat_id": 10416,
+      "target_act": 7.624
+    },
+    {
+      "corr": 0.3346,
+      "feat_id": 7217,
+      "target_act": 9.9707
+    },
+    {
+      "corr": 0.3326,
+      "feat_id": 6961,
+      "target_act": 32.4155
+    },
+    {
+      "corr": 0.3061,
+      "feat_id": 1500,
+      "target_act": 10.3413
+    },
+    {
+      "corr": 0.3029,
+      "feat_id": 31,
+      "target_act": 13.9857
+    },
+    {
+      "corr": 0.3005,
+      "feat_id": 10842,
+      "target_act": 41.6159
+    },
+    {
+      "corr": 0.2842,
+      "feat_id": 10307,
+      "target_act": 8.2564
+    }
+  ],
+  "24": [
+    {
+      "corr": 0.5015,
+      "feat_id": 4182,
+      "target_act": 81.9139
+    },
+    {
+      "corr": 0.4071,
+      "feat_id": 5839,
+      "target_act": 13.1826
+    },
+    {
+      "corr": 0.3605,
+      "feat_id": 14870,
+      "target_act": 53.3706
+    },
+    {
+      "corr": 0.3399,
+      "feat_id": 1125,
+      "target_act": 57.8701
+    },
+    {
+      "corr": 0.3373,
+      "feat_id": 14607,
+      "target_act": 9.4931
+    },
+    {
+      "corr": 0.3265,
+      "feat_id": 261,
+      "target_act": 166.7419
+    },
+    {
+      "corr": 0.3177,
+      "feat_id": 10241,
+      "target_act": 10.4487
+    },
+    {
+      "corr": 0.2783,
+      "feat_id": 1711,
+      "target_act": 10.1222
+    },
+    {
+      "corr": 0.2768,
+      "feat_id": 9972,
+      "target_act": 9.0721
+    },
+    {
+      "corr": 0.2742,
+      "feat_id": 3330,
+      "target_act": 9.6075
+    }
+  ]
+}

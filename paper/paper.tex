@@ -12,8 +12,8 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds}
+\usepackage[round]{natbib}
 \usepackage[colorlinks=true,allcolors=blue]{hyperref}
-\usepackage{authblk}
 
 \graphicspath{{figures/}}
 \captionsetup{font=small,labelfont=bf}
@@ -22,9 +22,8 @@
 \newcommand{\bk}{\beta_k}
 \newcommand{\kof}[1]{k\!=\!#1}
 
-\title{\bfseries Mechanistic Anatomy of Memory-Retrieval\\ Failure as Context Fills}
-\author[1]{Kunj Rathod}
-\affil[1]{University of Utah --- MEMROT v2}
+\title{\bfseries Controlled Evidence for Retrieval-Signal\\ Degradation as Context Fills:\\ A Mechanistic Case Study in Gemma-2-2B-it}
+\author{Kunj Rathod\\ \normalsize University of Utah --- MEMROT}
 \date{June 2026}
 
 \begin{document}
@@ -39,19 +38,25 @@
   native 8k window, we build \emph{controlled haystacks} from LongMemEval-S
   material: the same question is evaluated at every fill level
   $k \in \{0,1,2,4,8,14\}$ distractor sessions, with the gold session's position
-  randomized and logged. On 140 questions, accuracy falls monotonically from
-  $0.71$ at $\kof{0}$ to $0.34$ at $\kof{14}$. Retrieval-head attention mass on
+  randomized and logged. On 140 questions, accuracy declines overall from
+  $0.71$ at $\kof{0}$ to $0.34$ at $\kof{14}$ (the decline is not strictly
+  monotonic; $k{=}4$ slightly exceeds $k{=}2$). Retrieval-head attention mass on
   the gold span and recall-associated sparse-autoencoder (SAE) feature
   activations both decline with $k$ (mixed-effects $\bk=-0.023$,
   $p{=}2.4\times10^{-191}$; feature $\bk=-0.535$, $p{=}3.0\times10^{-90}$),
-  controlling for gold position. Crucially, in a \emph{paired within-question}
-  design the fill level at which the internal signal collapses predicts the level
-  at which the answer flips (Spearman $\rho=0.731$, $p{=}3.6\times10^{-9}$,
-  $n{=}48$; Cox $\mathrm{HR}=5.3\times10^{-4}$, $p{=}3.6\times10^{-9}$).
-  Causally, mean-ablating the 20 identified retrieval heads at $\kof{0}$ drops
-  accuracy by $0.82$ (random-head control: $0.25$), and feature-mode
-  intervention at high $k$ recovers $0.161$ (95\% CI $[0.032,0.290{]}$) of 31
-  flipped answers. The pipeline is seeded and re-runnable byte-identically.
+  controlling for gold position. In a \emph{paired within-question}
+  design the fill level at which the internal signal collapses is associated with
+  the level at which the answer flips (Spearman $\rho=0.731$,
+  $p{=}3.6\times10^{-9}$, $n{=}48$). Intervention experiments give
+  \emph{suggestive} causal evidence: mean-ablating the 20 candidate retrieval
+  heads at $\kof{0}$ drops accuracy by $0.82$ (single random-head control:
+  $0.25$), and feature-mode re-injection at high $k$ recovers $0.161$
+  (95\% CI $[0.032,0.290{]}$) of 31 flipped answers. We deliberately frame this
+  as a single-model, single-seed \emph{case study}: the SAE features are selected
+  in-sample, the attention measure is unnormalized, and Gemma-2's sliding-window
+  layers are a partial confound --- all addressed as open issues
+  (\S\ref{sec:limitations}) rather than resolved here. The pipeline is seeded and
+  re-runnable byte-identically.
   \vspace{1em}
   \end{abstract}
   \end{@twocolumnfalse}
@@ -145,9 +150,10 @@ behavioral flip (H2) and whether the machinery is causal (H3).}
 
 \begin{table}[t]
 \centering
-\caption{Accuracy by fill level $k$ on 140 questions. Accuracy decays
-monotonically as distractor sessions are added, despite the gold evidence
-remaining present and in-window.}
+\caption{Accuracy by fill level $k$ on 140 questions. Accuracy declines overall
+as distractor sessions are added --- though not strictly monotonically
+($k{=}4$ slightly exceeds $k{=}2$) --- despite the gold evidence remaining
+present and in-window.}
 \label{tab:acc}
 \begin{tabular}{lcccccc}
 \toprule
@@ -166,21 +172,31 @@ $\beta=0.446$). Recall-feature activation shows the same decline
 ($\bk=-0.535$, $p=3.0\times10^{-90}$). See Figures~\ref{fig:fig1}
 and~\ref{fig:fig4}.
 
-\paragraph{H2 (paired, headline).}
+\paragraph{H2 (paired).}
 Among the 100 questions correct at $\kof{0}$, the per-question
-signal-collapse level predicts the answer-flip level: Spearman
+signal-collapse level is associated with the answer-flip level: Spearman
 $\rho=0.731$ ($p=3.6\times10^{-9}$, $n=48$ questions with both events
-observed). A survival model over all questions (with censoring) gives a hazard
-ratio of $5.3\times10^{-4}$ ($p=3.6\times10^{-9}$) per unit normalized
-signal-AUC. The feature-signal variant gives $\rho=0.763$.
-See Figure~\ref{fig:fig2}.
+observed); the feature-signal variant gives $\rho=0.763$. We caution that both
+quantities are event-times over the same six $k$ levels, so a global worsening
+trend can inflate this correlation in the absence of a per-question link; a
+permutation test that preserves the marginal $k$ trend, threshold-sensitivity
+sweeps, and bootstrap CIs are required to separate the two and are not yet run
+(\S\ref{sec:limitations}). We previously reported a Cox hazard ratio here; we
+withdraw it pending a discrete-time hazard model appropriate to the irregular,
+six-level $k$ grid. See Figure~\ref{fig:fig2}.
 
-\paragraph{H3 (causal).}
-Mean-ablating the 20 retrieval heads at $\kof{0}$ on the 100 previously-correct
-questions drops accuracy by $0.82$, versus $0.25$ for matched random heads ---
-a $3.3\times$ specific effect. Intervening at high $k$ in feature mode (SAE
-recall-feature re-injection) recovers $0.161$ (95\% CI $[0.032,0.290]$) of the
-31 flipped answers. See Figure~\ref{fig:fig3}.
+\paragraph{H3 (intervention).}
+Mean-ablating the 20 candidate retrieval heads at $\kof{0}$ on the 100
+previously-correct questions drops accuracy by $0.82$, versus $0.25$ for a single
+matched random-head set. This shows the heads matter for answering at $\kof{0}$;
+it does \emph{not} by itself establish that they cause the high-$k$ failure.
+Intervening at high $k$ in feature mode (SAE recall-feature re-injection)
+recovers a modest $0.161$ (95\% CI $[0.032,0.290]$) of the 31 flipped answers.
+Because the features are selected in-sample and only one random control is run,
+we read H3 as suggestive rather than dispositive; stronger controls
+(many random head sets, layer- and magnitude-matched heads, sham/anti-recall
+feature injection) are listed in \S\ref{sec:limitations}. See
+Figure~\ref{fig:fig3}.
 
 % ---------- result figures ----------
 \begin{figure}[t]
@@ -195,19 +211,21 @@ context fills even though the gold evidence is present and in-window.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig2_flip_vs_collapse.pdf}
-\caption{\textbf{H2 (headline).} Per-question internal-collapse level versus
-behavioral flip level. The two are tightly coupled ($\rho=0.731$), supporting a
-mechanistic rather than incidental account of context rot.}
+\caption{\textbf{H2 (paired).} Per-question internal-collapse level versus
+behavioral flip level. The two are associated ($\rho=0.731$); because both are
+event-times over the same six $k$ levels, a permutation test preserving the
+marginal $k$ trend is needed before reading this as a per-question link.}
 \label{fig:fig2}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig3_causal_bars.pdf}
-\caption{\textbf{H3 (causal).} Left: accuracy drop from mean-ablating the 20
-retrieval heads ($0.82$) versus matched random heads ($0.25$). Right:
-fraction of flipped answers recovered by feature-mode intervention
-($0.161$, 95\% CI $[0.032,0.290]$).}
+\caption{\textbf{H3 (intervention).} Left: accuracy drop from mean-ablating the
+20 candidate retrieval heads ($0.82$) versus a single matched random-head set
+($0.25$). Right: fraction of flipped answers recovered by feature-mode
+intervention ($0.161$, 95\% CI $[0.032,0.290]$). Read as suggestive: features are
+selected in-sample and only one random control is run.}
 \label{fig:fig3}
 \end{figure}
 
@@ -216,22 +234,87 @@ fraction of flipped answers recovered by feature-mode intervention
 \includegraphics[width=\linewidth]{fig4_feature_heatmap.pdf}
 \caption{\textbf{H1 (features).} Recall-associated SAE feature activation across
 layers $\{20\text{--}24\}$ as a function of $k$; activation weakens with fill,
-mirroring the attention-mass decline ($\bk=-0.535$).}
+mirroring the attention-mass decline ($\bk=-0.535$). Features are selected
+in-sample by correlation with correctness, so this panel is descriptive, not
+held-out evidence (\S\ref{sec:limitations}).}
 \label{fig:fig4}
 \end{figure}
 
-\section{Limitations}
-A 2B base model and a single benchmark source; eager-attention requirement (no
-flash-attention numerics); heuristic (non-LLM-judge) grading; and distractor
-construction choices (fixed per-distractor token cap; pool drawn from the
-benchmark's own topic-matched filler). Gemma-2 interleaves sliding-window and
-global attention layers, so gold spans beyond the 4{,}096-token sliding window
-are structurally invisible to sliding layers; we log this but do not model it
-separately.
+\section{Limitations and open issues}
+\label{sec:limitations}
+We state these prominently because several are potential confounds for the
+headline claims, not merely scope caveats. They define our planned next round.
+
+\paragraph{In-sample SAE feature selection (label leakage).} Recall features are
+chosen by correlation with correctness on the same $(q,k)$ samples on which H1/H2/H3
+feature results are then reported. This is circular. The fix is a
+discovery/held-out question split with feature and layer selection on discovery
+only, plus random-feature, anti-correlated-feature, and magnitude-matched
+controls; the feature results should be read as in-sample proxies until then.
+
+\paragraph{Unnormalized attention mass (dilution).} We report absolute
+retrieval-head attention mass on the gold span. As $k$ grows the key set grows,
+so mass on any fixed span can fall by dilution alone. Required controls: mass
+normalized by the gold-token fraction, enrichment over uniform, and
+length/position-matched distractor- and random-span baselines.
+
+\paragraph{Sliding-window visibility as a competing mechanism.} Gemma-2
+interleaves sliding-window (4{,}096) and global layers. With gold position
+randomized and context growing, high-$k$ conditions place gold outside the
+sliding window for many layers, so part of the attention decline may be
+architectural rather than emergent. We must stratify by in/out-of-window gold,
+analyze global layers separately, and add a gold-stays-visible condition.
+
+\paragraph{H2 shared-trend artifact and Cox fragility.} Collapse- and flip-times
+live on the same six-level $k$ grid; a global trend can induce correlation
+without a per-question link. We need a permutation test preserving the marginal
+$k$ trend, threshold sweeps ($\text{collapse\_frac}\in[0.3,0.7]$), bootstrap CIs,
+and a report of how often collapse \emph{precedes} flip. The previously reported
+Cox HR is withdrawn pending a discrete-time hazard model with only prior/current
+$k$ signal.
+
+\paragraph{Causal strength.} H3a shows the heads matter at $\kof{0}$, not that
+they cause high-$k$ rot; H3b recovery is modest and rests on in-sample features.
+Stronger controls (many random head sets, layer-/magnitude-matched heads, sham
+and anti-recall injection, harm checks on already-correct high-$k$ items) are
+needed before any causal language.
+
+\paragraph{Heuristic grader.} Substring/token-F1 correctness drives accuracy,
+feature selection, flip detection, and recovery detection. We will audit a
+stratified sample (correct/wrong/flipped/recovered) against human or LLM-judge
+labels, report grader precision/recall, and re-run headline stats on the
+H2/H3-critical examples.
+
+\paragraph{Benchmark variant and sampling.} Long gold sessions are trimmed to a
+turn window around the \texttt{has\_answer} evidence ($\approx$X\% of questions;
+to be reported), making this a controlled LongMemEval-S \emph{variant}; we will
+compare trimmed vs.\ untrimmed behavior. Gold position is sampled once per
+$(q,k)$; given the large position effect ($\beta=0.446$), multiple position seeds
+are needed. Results are single-model (Gemma-2-2B-it) and single-seed; eager
+attention is required for the hooks.
 
 \section{Related work}
-Context rot (Chroma); lost-in-the-middle (Liu et al.); retrieval heads (Wu et
-al.); Gemma Scope SAEs (Lieberum et al.); LongMemEval (Wu et al.).
+\paragraph{Behavioral context degradation.} ``Lost in the middle''
+\citep{liu2023lost} shows accuracy depends on evidence position within long
+contexts; ``context rot'' reports \citep{chroma2024contextrot} document accuracy
+decay as inputs lengthen. These are behavioral and largely correlational; our
+contribution is a paired, evidence-in-window design that pairs the behavior with
+internal signals and intervention.
+
+\paragraph{Retrieval heads and mechanistic interpretability.} Retrieval heads
+\citep{wu2024retrievalheads} are attention heads that copy salient context into
+generation; induction-head and circuit analyses motivate head-level ablation as a
+causal probe. We use copy-score head identification but caution (\S\ref{sec:limitations})
+that head necessity at $\kof{0}$ is not sufficiency for high-$k$ failure.
+
+\paragraph{Sparse autoencoders.} Gemma Scope \citep{lieberum2024gemmascope}
+provides JumpReLU SAEs across Gemma-2 layers; SAE features have been used to read
+and steer model internals. Our use is intervention-based but, as noted, currently
+in-sample.
+
+\paragraph{Long-term memory evaluation.} LongMemEval \citep{wu2024longmemeval}
+supplies the question/evidence material; we adapt it into controlled haystacks
+rather than evaluating end-to-end memory systems.
 
 \section{Reproducibility}
 Seed $0$; artifact schema v2; environment hash \texttt{d6e719d3}. The producing
@@ -239,6 +322,35 @@ run is git \texttt{54907d9} plus the smoke-gate config/\,data-prep amendment now
 committed as \texttt{83a762c} (model $\rightarrow$ \texttt{gemma-2-2b-it};
 exclude \texttt{single-session-preference}; $n{=}140$). Three SLURM jobs
 reproduce everything end-to-end; Run~1 re-execution is byte-identical on
-\texttt{answers.parquet}.
+\texttt{answers.parquet}. Small summary artifacts that regenerate every headline
+number ($\texttt{run1\_verify.json}$, $\texttt{results\_summary.json}$) are
+tracked in the repository under \texttt{results/2b/}.
+
+\begin{thebibliography}{9}
+\bibitem[Chroma(2024)]{chroma2024contextrot}
+Chroma Research.
+\newblock Context Rot: How Increasing Input Tokens Impacts LLM Performance.
+\newblock Technical report, 2024.
+
+\bibitem[Lieberum et al.(2024)]{lieberum2024gemmascope}
+T.~Lieberum, S.~Rajamanoharan, A.~Conmy, et al.
+\newblock Gemma Scope: Open Sparse Autoencoders Everywhere All At Once on Gemma~2.
+\newblock arXiv:2408.05147, 2024.
+
+\bibitem[Liu et al.(2023)]{liu2023lost}
+N.~F. Liu, K.~Lin, J.~Hewitt, et al.
+\newblock Lost in the Middle: How Language Models Use Long Contexts.
+\newblock \emph{TACL}, 2024 (arXiv:2307.03172).
+
+\bibitem[Wu et al.(2024a)]{wu2024retrievalheads}
+W.~Wu, Y.~Wang, G.~Xiao, et al.
+\newblock Retrieval Head Mechanistically Explains Long-Context Factuality.
+\newblock arXiv:2404.15574, 2024.
+
+\bibitem[Wu et al.(2024b)]{wu2024longmemeval}
+D.~Wu, H.~Wang, W.~Yu, et al.
+\newblock LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory.
+\newblock arXiv:2410.10813, 2024.
+\end{thebibliography}
 
 \end{document}
