@@ -3,4 +3,12 @@ __pycache__/
 logs/*.out
 logs/*.err
 logs/*.log
-paper/
+# paper/: track LaTeX source, figures and the built PDF deliverable;
+# ignore the auto-generated markdown (Run 3 output) and LaTeX build aux files
+paper/paper.md
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
