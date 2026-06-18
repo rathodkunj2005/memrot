@@ -2,6 +2,9 @@
 
 Selection rules (v2 design, amended after measuring the dataset):
   - drop abstention questions (qid endswith '_abs'; they have no gold answer)
+  - drop benchmark.exclude_question_types (single-session-preference: their gold
+    "answer" is a ~390-char prose preference-rubric, not a literal string; the
+    heuristic substring/F1 grader cannot score them — they need an LLM judge)
   - keep questions with EXACTLY ONE gold evidence session (answer_session_ids);
     LongMemEval-S has exactly 170 such questions
   - gold session must fit benchmark.gold_max_tokens; sessions that are longer
@@ -83,16 +86,20 @@ def prepare(cfg, tokenizer, n_questions=None, force=False):
     raw = _load_raw(cfg)
     n_target = n_questions or cfg["benchmark"]["n_questions"]
     gold_max = cfg["benchmark"]["gold_max_tokens"]
+    exclude_types = set(cfg["benchmark"].get("exclude_question_types", []))
 
     def ntok(text):
         return len(tokenizer(text, add_special_tokens=False)["input_ids"])
 
     records, sessions = [], []
-    n_abs = n_multi = n_long = n_missing = 0
+    n_abs = n_multi = n_long = n_missing = n_xtype = 0
     for item in sorted(raw, key=lambda x: str(x["question_id"])):
         qid = str(item["question_id"])
         if qid.endswith("_abs"):
             n_abs += 1
+            continue
+        if str(item.get("question_type", "")) in exclude_types:
+            n_xtype += 1
             continue
         gold_ids = list(item.get("answer_session_ids", []))
         if len(gold_ids) != 1:
@@ -167,5 +174,6 @@ def prepare(cfg, tokenizer, n_questions=None, force=False):
         f"kept {len(records_df)} questions "
         f"({int(records_df['gold_trimmed'].sum())} gold-trimmed), "
         f"{len(sessions_df)} pool sessions (skipped: {n_abs} abstention, "
-        f"{n_multi} multi/zero-gold, {n_long} untrimmable, {n_missing} gold-missing)")
+        f"{n_multi} multi/zero-gold, {n_long} untrimmable, {n_missing} gold-missing, "
+        f"{n_xtype} excluded-type)")
     return records_df, sessions_df

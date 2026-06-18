@@ -2,7 +2,7 @@
 schema_version: 2
 
 model:
-  name: google/gemma-2-2b          # base model; if k=0 accuracy gate fails, switch to google/gemma-2-2b-it (Gemma Scope pt SAEs transfer reasonably; see README)
+  name: google/gemma-2-2b-it        # switched from base after smoke k0 acc=0.17 < 0.60; pt SAEs transfer reasonably (see README)
   dtype: bfloat16
   attn_implementation: eager       # REQUIRED: hooks must see attention weights
   max_ctx: 8192
@@ -24,7 +24,9 @@ benchmark:
   hf_repo: xiaowu0162/longmemeval
   hf_filename: longmemeval_s       # note: no .json extension in the HF repo
   local_json: null                 # set to an absolute path to skip the HF download
-  n_questions: 170                 # ALL exactly-one-gold questions in LongMemEval-S (measured 2026-06-09; the plan's 300 does not exist in the data)
+  exclude_question_types:          # gold answers here are prose preference-rubrics (mean ~390 chars); the
+    - single-session-preference    # heuristic substring/F1 grader cannot score them — they need an LLM judge
+  n_questions: 140                 # 170 exactly-one-gold questions minus 30 preference; 64 user + 56 assistant + 20 temporal
   k_levels: [0, 1, 2, 4, 8, 14]
   gold_max_tokens: 2000            # longer gold sessions are trimmed to a turn window around the has_answer evidence turn(s)
 
