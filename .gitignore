@@ -12,3 +12,21 @@ paper/*.out
 paper/*.fls
 paper/*.fdb_latexmk
 paper/*.synctex.gz
+
+# mac rescue safety
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+id_rsa
+id_ed25519
+node_modules/
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+.cache/
